@@ -9,6 +9,7 @@ use App\Repositories\DoctorRepository;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Exception;
 
 class ConsultationController extends Controller
@@ -106,6 +107,16 @@ class ConsultationController extends Controller
         DB::beginTransaction();
         try {
 
+            $validator = Validator::make($request->all(), [
+                'user_id'   => 'required',
+                'doctor_id' => 'required',
+                'date'      => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->messages(), 422);
+            }
+
             // check user already exist
             $consultation = Consultation::query()->where('user_id', $request->user_id)->first();
             if($consultation) {
@@ -139,6 +150,16 @@ class ConsultationController extends Controller
     {
         DB::beginTransaction();
         try {
+
+            $validator = Validator::make($request->all(), [
+                'doctor_id' => 'required',
+                'date'      => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->messages(), 422);
+            }
+
             $consultation = Consultation::query()->where('user_id', $id)->first();
             if(!$consultation) {
                 return Response::fail('Data Not Found', 404);
@@ -167,10 +188,10 @@ class ConsultationController extends Controller
             DB::commit();
 
             return Response::success($result, 'Success Update Consultation Submission', null, 200);
-        }catch (Exception) {
+        }catch (Exception $e) {
             DB::rollBack();
 
-            return Response::fail('Internal Server Error', 500);
+            return Response::fail('Internal Server Error'.$e->getMessage(), 500);
         }
     }
 
