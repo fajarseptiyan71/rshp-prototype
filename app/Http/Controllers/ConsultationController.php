@@ -26,10 +26,20 @@ class ConsultationController extends Controller
 
     public function index(Request $request)
     {
-        $consultations = $this->doctorRepo->get()
+         $consultations = $this->doctorRepo->get()
+                ->when($request->name, function ($query) use ($request) {
+                    $query->where('name', 'like', '%'.$request->name.'%');
+                })
                 ->whereHas('consultations')
-                ->withCount(['consultations as consultation_count'])
-                ->paginate($request->perPage);
+                ->withCount(['consultations as consultation_count']);
+
+         if ($request->specialist) {
+            $consultations->whereHas('specialist', function ($query) use ($request) {
+                $query->where('name', 'like', '%'.$request->specialist.'%');
+            });
+         }
+
+         $consultations = $consultations->paginate($request->perPage);
 
         $metaData = [
             'total' => $consultations->total(),
@@ -52,8 +62,26 @@ class ConsultationController extends Controller
     public function indexPatients(Request $request)
     {
         $consultations = $this->consultationRepo->get()
-                ->whereHas('user')
-                ->paginate($request->perPage);
+                ->whereHas('user');
+
+
+        if ($request->doctorName) {
+            $consultations->whereHas('doctor', function ($query) use ($request) {
+                $query->where('name', 'like', '%'.$request->doctorName.'%');
+            });
+        }
+
+        if ($request->userName) {
+            $consultations->whereHas('user', function ($query) use ($request) {
+                $query->where('name', 'like', '%'.$request->userName.'%');
+            });
+        }
+
+        if ($request->date) {
+            $consultations->where('date', $request->date);
+        }
+
+        $consultations =  $consultations->paginate($request->perPage);
 
         $metaData = [
             'total' => $consultations->total(),
@@ -110,16 +138,17 @@ class ConsultationController extends Controller
             $validator = Validator::make($request->all(), [
                 'user_id'   => 'required',
                 'doctor_id' => 'required',
-                'date'      => 'required'
+                'date'      => 'required',
+                'animal_type' => 'required'
             ]);
 
             if ($validator->fails()) {
-                return Response::fail($validator->messages(), 422);
+                return Response::fail($validator->errors(), 422);
             }
 
             // check user already exist
             $consultation = Consultation::query()->where('user_id', $request->user_id)->first();
-            if($consultation) {
+            if($consultation->doctor_id == $request->doctor_id) {
                 return Response::fail('Already Consultation Submission', 409);
             }
 
@@ -153,14 +182,15 @@ class ConsultationController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'doctor_id' => 'required',
-                'date'      => 'required'
+                'date'      => 'required',
+                'animal_type' => 'required'
             ]);
 
             if ($validator->fails()) {
-                return Response::fail($validator->messages(), 422);
+                return Response::fail($validator->errors(), 422);
             }
 
-            $consultation = Consultation::query()->where('user_id', $id)->first();
+            $consultation = Consultation::query()->where('id', $id)->first();
             if(!$consultation) {
                 return Response::fail('Data Not Found', 404);
             }

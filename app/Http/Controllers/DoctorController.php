@@ -9,6 +9,7 @@ use App\Repositories\DoctorRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 class DoctorController extends Controller
 {
@@ -81,6 +82,19 @@ class DoctorController extends Controller
         DB::beginTransaction();
         try {
 
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+                'specialist_id' => 'required',
+                'birth_date'    => 'required',
+                'birth_place'   => 'required',
+                'gender'        => 'required',
+                'address'       => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->errors(), 422);
+            }
+
             $result = $this->doctorRepo->save($request);
             DB::commit();
 
@@ -112,6 +126,20 @@ class DoctorController extends Controller
     {
         DB::beginTransaction();
         try {
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
+                'specialist_id' => 'required',
+                'birth_date'    => 'required',
+                'birth_place'   => 'required',
+                'gender'        => 'required',
+                'address'       => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->errors(), 422);
+            }
+
             $doctor = Doctor::query()->where('id', $id)->first();
             if(!$doctor) {
                 return Response::fail('Doctor Not Found', 404);

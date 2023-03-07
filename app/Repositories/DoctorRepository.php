@@ -17,6 +17,10 @@ class DoctorRepository
         $doctor = !is_null($doctor) ? $doctor : new Doctor();
         $doctor->name = $request->name;
         $doctor->specialist_id = $request->specialist_id;
+        $doctor->birth_date = $request->birth_date;
+        $doctor->birth_place = $request->birth_place;
+        $doctor->gender = $request->gender;
+        $doctor->address = $request->address;
         $doctor->save();
 
         return $doctor;

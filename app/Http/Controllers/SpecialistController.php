@@ -8,6 +8,7 @@ use App\Repositories\SpecialistRepository;
 use Illuminate\Http\Request;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class SpecialistController extends Controller
 {
@@ -50,6 +51,14 @@ class SpecialistController extends Controller
         DB::beginTransaction();
         try {
 
+            $validator = Validator::make($request->all(), [
+                'name' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->errors(), 422);
+            }
+
             $result = $this->specialistRepo->save($request);
             DB::commit();
 
@@ -65,6 +74,14 @@ class SpecialistController extends Controller
     {
         DB::beginTransaction();
         try {
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required'
+            ]);
+
+            if ($validator->fails()) {
+                return Response::fail($validator->errors(), 422);
+            }
 
             $specialist = Specialist::query()->where('id', $id)->first();
             $result = $this->specialistRepo->save($request, $specialist);
